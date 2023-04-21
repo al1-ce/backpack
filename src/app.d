@@ -4,7 +4,7 @@ import std.getopt;
 import std.file: exists, mkdir, isDir;
 import std.array: split, replace;
 import std.algorithm.mutation: remove;
-import std.algorithm.searching: canFind;
+import std.algorithm.searching: canFind, count;
 import std.process: wait, spawnProcess, ProcessConfig = Config;
 import std.datetime: Clock, SysTime;
 import std.format: format;
@@ -37,8 +37,8 @@ int main(string[] args) {
         "remove|r", "Remove existing backup path", &removePath,
         "list|l", "Lists existing backup paths", &listPath,
         "backup|b", "Goes through each path and pushes it", &doBackup,
-        "branch|B", "Sets upstream branch, default is \"master\"", &branch,
-        "origin|o", "Sets origin name, default is \"origin\"", &origin,
+        "branch|B", "Sets upstream branch for --add, default is \"master\"", &branch,
+        "origin|o", "Sets origin name for --add, default is \"origin\"", &origin,
         "message|m", "Commit message, default is \"Backup: %Y/%m/%d %H:%M:%S\"", &backupMessage
     );
 
@@ -58,11 +58,14 @@ int main(string[] args) {
         if (p.exists && p.isDir) {
             string gitdir = p ~ dirSeparator ~ ".git";
             if (gitdir.exists && gitdir.isDir) {
-                if (backupPaths.canFind(p)) {
+                if (findPath(p) != -1) {
                     writeln("Error: path \"" ~ addPath ~ "\" is already added.");
                     return 1;
                 }
-                backupPaths ~= p;
+                if (branch == "") branch = "master";
+                if (origin == "") origin = "origin";
+
+                backupPaths ~= BackupPath(p, origin, branch);
                 configWrite();
             } else {
                 writeln("Error: path \"" ~ addPath ~ "\" is not a git repository.");
@@ -87,7 +90,7 @@ int main(string[] args) {
 
     if (listPath) {
         foreach (bkpath; backupPaths) {
-            writeln(bkpath);
+            writeln(bkpath.path, ":", bkpath.origin, ":", bkpath.branch);
         }
     }
 
@@ -102,22 +105,24 @@ int main(string[] args) {
             commitMessage ~= "%d/%02d/%02d %02d:%02d:%02d"
                 .format(time.year, time.month, time.day, time.hour, time.minute, time.second);
         }
-        if (branch == "") branch = "master";
-        if (origin == "") origin = "origin";
         foreach (bkpath; backupPaths) {
-            writeln("# Backing up: \"" ~ bkpath ~ "\"");
-            wait(spawnProcess(["git", "add", "."], null, ProcessConfig.none, bkpath));
-            wait(spawnProcess(["git", "commit", "-m", commitMessage], null, ProcessConfig.none, bkpath));
-            wait(spawnProcess(["git", "push", origin, branch], null, ProcessConfig.none, bkpath));
+            // git diff --quiet --exit-code
+            int ret = wait(spawnProcess(["git", "add", "."], null, ProcessConfig.none, bkpath.path));
+            writeln(ret);
+            // writeln("# Backing up: \"" ~ bkpath.path ~ "\"");
+            // wait(spawnProcess(["git", "add", "."], null, ProcessConfig.none, bkpath.path));
+            // wait(spawnProcess(["git", "commit", "-m", commitMessage], null, ProcessConfig.none, bkpath.path));
+            // wait(spawnProcess(["git", "push", bkpath.origin, bkpath.branch], null, ProcessConfig.none, bkpath.path));
         }
     }
 
     return 0;
 }
 
+// maybe update it to format "/global/path/to/dir:origin:branch"
 string configPath = "~/.config/backpack/backup_list";
 string configPathOnly = "~/.config/backpack";
-string[] backupPaths = [];
+BackupPath[] backupPaths = [];
 
 void checkPath() {
     if (!configPathOnly.fixPath.exists()) {
@@ -132,7 +137,8 @@ void checkPath() {
 void configWrite() {
     string _out;
     for (int i = 0; i < backupPaths.length; ++i) {
-        _out ~= backupPaths[i];
+        BackupPath p = backupPaths[i];
+        _out ~= p.path ~ ":" ~ p.origin ~ ":" ~ p.branch;
         if (i + 1 != backupPaths.length) _out ~= "\n";
     }
     File f = File(configPath.fixPath, "w+");
@@ -146,7 +152,15 @@ void configRead() {
     while (!f.eof) {
         string line = f.readln();
         if (line == "") break;
-        backupPaths ~= line.replace('\n', '\0');
+        line = line.replace('\n', "");
+        if (line.count(':') != 2) {
+            writeln("Error, unable to read config line \"", i, 
+                "\", expected format is: \"absolutePath:originName:branchName\". Skipping.");
+            ++i;
+            continue;
+        }
+        string[3] l = line.split(':');
+        backupPaths ~= BackupPath(l[0], l[1], l[2]);
         ++i;
     }
     f.close();
@@ -154,7 +168,7 @@ void configRead() {
 
 int findPath(string p) {
     for (int i = 0; i < backupPaths.length; ++i) {
-        string path = backupPaths[i];
+        string path = backupPaths[i].path;
         if (path == p) {
             return i;
         }
@@ -162,4 +176,9 @@ int findPath(string p) {
     return -1;
 }
 
+struct BackupPath {
+    string path;
+    string origin;
+    string branch;
+}
 
