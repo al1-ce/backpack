@@ -140,7 +140,7 @@ void configRead() {
     while (!f.eof) {
         string line = f.readln();
         if (line == "") break;
-        backupPaths ~= line[0..$-1];
+        backupPaths ~= line.replace('\n', '\0');
         ++i;
     }
     f.close();
