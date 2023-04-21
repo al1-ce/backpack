@@ -98,8 +98,8 @@ int main(string[] args) {
             commitMessage ~= "%d/%02d/%02d %02d:%02d:%02d"
                 .format(time.year, time.month, time.day, time.hour, time.minute, time.second);
         }
-        writeln(commitMessage);
         foreach (bkpath; backupPaths) {
+            writeln("# Backing up: \"" ~ bkpath ~ "\"");
             wait(spawnProcess(["git", "add", "."], null, ProcessConfig.none, bkpath));
             wait(spawnProcess(["git", "commit", "-m", commitMessage], null, ProcessConfig.none, bkpath));
             wait(spawnProcess(["git", "push"], null, ProcessConfig.none, bkpath));
