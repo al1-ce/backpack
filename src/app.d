@@ -25,6 +25,8 @@ int main(string[] args) {
     bool listPath = false;
     bool doBackup = false;
     string backupMessage = "";
+    string branch = "";
+    string origin = "";
 
     GetoptResult help = getopt(
         args,
@@ -35,6 +37,8 @@ int main(string[] args) {
         "remove|r", "Remove existing backup path", &removePath,
         "list|l", "Lists existing backup paths", &listPath,
         "backup|b", "Goes through each path and pushes it", &doBackup,
+        "branch|B", "Sets upstream branch, default is \"master\"", &branch,
+        "origin|o", "Sets origin name, default is \"origin\"", &origin,
         "message|m", "Commit message, default is \"Backup: %Y/%m/%d %H:%M:%S\"", &backupMessage
     );
 
@@ -98,11 +102,13 @@ int main(string[] args) {
             commitMessage ~= "%d/%02d/%02d %02d:%02d:%02d"
                 .format(time.year, time.month, time.day, time.hour, time.minute, time.second);
         }
+        if (branch == "") branch = "master";
+        if (origin == "") origin = "origin";
         foreach (bkpath; backupPaths) {
             writeln("# Backing up: \"" ~ bkpath ~ "\"");
             wait(spawnProcess(["git", "add", "."], null, ProcessConfig.none, bkpath));
             wait(spawnProcess(["git", "commit", "-m", commitMessage], null, ProcessConfig.none, bkpath));
-            wait(spawnProcess(["git", "push"], null, ProcessConfig.none, bkpath));
+            wait(spawnProcess(["git", "push", origin, branch], null, ProcessConfig.none, bkpath));
         }
     }
 
