@@ -82,6 +82,7 @@ int main(string[] args) {
         int pos = findPath(p);
         if (pos != -1) {
             backupPaths = backupPaths.remove(pos);
+            configWrite();
         } else {
             writeln("Error: path \"" ~ removePath ~ "\" is not in backup list.");
             return 1;
