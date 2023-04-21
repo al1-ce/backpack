@@ -107,12 +107,19 @@ int main(string[] args) {
         }
         foreach (bkpath; backupPaths) {
             // git diff --quiet --exit-code
-            int ret = wait(spawnProcess(["git", "add", "."], null, ProcessConfig.none, bkpath.path));
-            writeln(ret);
-            // writeln("# Backing up: \"" ~ bkpath.path ~ "\"");
-            // wait(spawnProcess(["git", "add", "."], null, ProcessConfig.none, bkpath.path));
-            // wait(spawnProcess(["git", "commit", "-m", commitMessage], null, ProcessConfig.none, bkpath.path));
-            // wait(spawnProcess(["git", "push", bkpath.origin, bkpath.branch], null, ProcessConfig.none, bkpath.path));
+            int ret = wait(
+                    spawnProcess(["git", "diff", "--quiet", "--exit-code"], null, ProcessConfig.none, bkpath.path));
+            if (ret == 1) {
+                writeln("# Backing up: \"" ~ bkpath.path ~ "\"");
+                wait(
+                    spawnProcess(["git", "add", "."], null, ProcessConfig.none, bkpath.path));
+                wait(
+                    spawnProcess(["git", "commit", "-m", commitMessage], null, ProcessConfig.none, bkpath.path));
+                wait(
+                    spawnProcess(["git", "push", bkpath.origin, bkpath.branch], null, ProcessConfig.none, bkpath.path));
+            } else {
+                writeln("# Skipping: \"" ~ bkpath.path ~ "\", noting to commit");
+            }
         }
     }
 
