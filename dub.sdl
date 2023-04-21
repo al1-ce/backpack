@@ -7,5 +7,14 @@ dependency "sily" version="~>1.4.1"
 targetName "backpack"
 targetPath "bin/"
 sourcePaths "src/"
-
-
+configuration "default" {
+	targetType "executable"
+	targetPath "./bin"
+	targetName "backpack"
+}
+configuration "install" {
+	targetType "executable"
+	targetPath "./bin"
+	targetName "backpack"
+	postBuildCommands "echo Copying binary to /usr/bin && sudo mv ./bin/backpack /usr/bin/backpack"
+}
