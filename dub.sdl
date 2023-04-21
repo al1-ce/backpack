@@ -1,0 +1,11 @@
+name "backpack"
+description "GIT-based backup tool"
+authors "Alisa Lain"
+copyright "Copyright © 2023, Alisa Lain"
+license "MIT"
+dependency "sily" version="~>1.4.1"
+targetName "backpack"
+targetPath "bin/"
+sourcePaths "src/"
+
+
