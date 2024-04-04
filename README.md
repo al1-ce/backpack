@@ -1,6 +1,8 @@
 # backpack
 Simple GIT based backup tool written in D
 
+# Archived since I do not intend to work on it anymore (at least for now). There are better solutions like YADM
+
 [![aur](https://img.shields.io/aur/version/backpack.svg?logo=archlinux&style=flat-square&logoColor=white)](https://aur.archlinux.org/packages/backpack) 
 [![dub](https://img.shields.io/dub/v/backpack.svg?logo=d&style=flat-square)](https://code.dlang.org/packages/backpack) 
 [![git](https://img.shields.io/github/v/release/al1-ce/backpack?label=git&logo=github&style=flat-square)](https://github.com/al1-ce/backpack)
